@@ -9,4 +9,4 @@
 *.sjp
 *.xml
 *.shx
-**/data/
+data/
