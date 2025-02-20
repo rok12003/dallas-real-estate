@@ -1,3 +1,5 @@
+### Time Series Analysis ###
+
 # Setting things up:
 ## Library imports:
 ### General imports:
@@ -45,7 +47,7 @@ if (!file.exists("data/dallas_housing_long.csv")) write.csv(
 if (!file.exists("data/dallas_housing_long_five.csv")) write.csv(
   dallas_housing_long, "data/dallas_housing_long_five.csv", row.names = FALSE)  
 
-# Time Series Initialization:
+# Time Series Fun:
 ## Creating a time series object for each zip code for each price point
 dallas_ts <- dallas_housing_long_five |> 
   mutate(Date = yearmonth(Date)) |>  
@@ -57,6 +59,7 @@ dallas_ts <- dallas_ts |>
   mutate(Price = na.approx(Price, na.rm = FALSE)) |>
   ungroup()
 
+# ARIMA modeling:
 ## Fitting a simple ARIMA model onto the ts object:
 arima_model <- dallas_ts |>
   model(ARIMA(Price))
@@ -92,6 +95,7 @@ validation_df <- validation_df |>
 ### HOLY SHIT--only an average of $363 difference between ARIMA & actual price
 ### Linear model kinda goated ngl. 
 
-
-
+# Saving objects for Shiny App:
+save(validation_df, file = "data/validation_data.RData")
+saveRDS(dallas_ts, "data/dallas_ts.rds")
 
