@@ -4,7 +4,7 @@
 ## General imports:
 library(tidyverse)
 library(dplyr)
-libary(ggplot2)
+library(ggplot2)
 
 ## Shiny imports:
 library(shiny)
@@ -38,7 +38,7 @@ dallas_zips <- as.character(unique(dallas_ts$RegionName))
 
 ### Filtering:
 dallas_shape_files <- dallas_shape_files |> 
-  filter(ZCTA5CE10 %in% dallas_zips)
+  filter(ZCTA5CE10 %in% unique(dallas_ts$RegionName))
 
 
 
