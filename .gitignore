@@ -9,5 +9,6 @@
 *.sjp
 *.xml
 *.shx
+*.png
 data/
 .Rproj.user
