@@ -13,8 +13,8 @@ library(tigris)
 
 # Data Pulling & Wrangling:
 ## Loading in dataframes from ts analysis:
-load("data/validation_data.RData")
-dallas_ts <- readRDS("data/dallas_ts.rds")
+load("data/processed_dfs/validation_data.RData")
+dallas_ts <- readRDS("data/processed_dfs/dallas_ts.rds")
 
 ## Personal Census API key:
 census_api_key(Sys.getenv("CENSUS_API_KEY"))
@@ -54,4 +54,4 @@ shiny_df <- dallas_shape_files |>
   left_join(combined_ts, by = c("ZCTA5CE10" = "RegionName"))
 
 ## Save as an df for later use:
-save(shiny_df, file = "data/shiny_df.RData")
+save(shiny_df, file = "data/processed_dfs/shiny_df.RData")

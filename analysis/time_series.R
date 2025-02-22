@@ -15,7 +15,7 @@ library(urca)
 
 ## Importing dataset:
 ## USA Housing Data from Zillow:
-housing_data <- read_csv("data/zillow_data_december_update.csv")
+housing_data <- read_csv("data/initial_data/zillow_data_december_update.csv")
 
 ## Filtering to Dallas MSA:
 dallas_housing <- housing_data |>
@@ -40,12 +40,12 @@ dallas_housing_long_five <- dallas_housing_long |>
   filter(Date > '2019-12-31' & Date <= '2024-11-30')
 
 ### Saving dallas housing df(s) as csvs for later use:
-if (!file.exists("data/dallas_housing.csv")) write.csv(
-  dallas_housing, "data/dallas_housing.csv", row.names = FALSE)  
-if (!file.exists("data/dallas_housing_long.csv")) write.csv(
-  dallas_housing_long, "data/dallas_housing_long.csv", row.names = FALSE)
-if (!file.exists("data/dallas_housing_long_five.csv")) write.csv(
-  dallas_housing_long, "data/dallas_housing_long_five.csv", row.names = FALSE)  
+if (!file.exists("data/dallas_csvs/dallas_housing.csv")) write.csv(
+  dallas_housing, "data/dallas_csvs/dallas_housing.csv", row.names = FALSE)  
+if (!file.exists("data/dallas_csvs/dallas_housing_long.csv")) write.csv(
+  dallas_housing_long, "data/dallas_csvs/dallas_housing_long.csv", row.names = FALSE)
+if (!file.exists("data/dallas_csvs/dallas_housing_long_five.csv")) write.csv(
+  dallas_housing_long, "data/dallas_csvs/dallas_housing_long_five.csv", row.names = FALSE)  
 
 # Time Series Fun:
 ## Creating a time series object for each zip code for each price point
@@ -96,6 +96,6 @@ validation_df <- validation_df |>
 ### Linear model kinda goated ngl. 
 
 # Saving objects for Shiny App:
-save(validation_df, file = "data/validation_data.RData")
-saveRDS(dallas_ts, "data/dallas_ts.rds")
+save(validation_df, file = "data/processed_dfs/validation_data.RData")
+saveRDS(dallas_ts, "data/processed_dfs/dallas_ts.rds")
 

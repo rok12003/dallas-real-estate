@@ -15,7 +15,7 @@ library(tmap)
 library(sf)
 
 ## Loading in our beautiful dataset:
-load("data/shiny_df.RData")
+load("data/processed_dfs/shiny_df.RData")
 
 # ui.R
 
@@ -26,7 +26,7 @@ load("data/shiny_df.RData")
 ## Creating base tmap Dallas Map to work with:
 tmap_mode("view") +
   tm_basemap("OpenStreetMap") +
-  tm_shape(dallas_spatial_with_prices) +
+  tm_shape(shiny_df) +
   
   ### Formatting & data stuff:
   tm_polygons(
