@@ -40,28 +40,45 @@ dallas_zips <- as.character(unique(dallas_ts$RegionName))
 dallas_shape_files <- dallas_shape_files |> 
   filter(ZCTA5CE10 %in% unique(dallas_ts$RegionName))
 
+## Experiment: Taking most recent home valuation & seeing how viz looks:
+### Most recent price:
+most_recent_prices <- dallas_ts |>
+  group_by(RegionName) |>
+  filter(Date == max(Date)) |>
+  select(RegionName, Price) |>
+  ungroup()
+
+### Joining on spatial data:
+dallas_spatial_with_prices <- dallas_shape_files |>
+  left_join(most_recent_prices, 
+            by = c("ZCTA5CE10" = "RegionName"))
+
 # Data Viz Time
 ## Creating base tmap Dallas Map to work with:
 tmap_mode("view") +
   tm_basemap("OpenStreetMap") +
-  tm_shape(dallas_shape_files) +
+  tm_shape(dallas_spatial_with_prices) +
   
   ### Formatting & data stuff:
   tm_polygons(
+    col = "Price",
+    palette = "inferno",
     alpha = 0.5,
-    palette = "viridis",
-    border.col = "navy",
-    border.alpha = 0.5, 
-    id = "ZCTA5CE10",
+    border.col = "black",
+    border.alpha = 0.5,
+    title = "Housing Prices ($)",
+    style = "jenks",
+    n = 8,
     popup.vars = c(
-      "Zip Code" = "ZCTA5CE10"
+      "Zip Code" = "ZCTA5CE10",
+      "Average Price" = "Price"
     )
   ) +
   
   ### Layout:
   tm_layout(
     title = "Single-Family Home Prices by Zip Code in the Dallas-Ft. Worth MSA",
-    title.position = c("center", "center")
+    title.position = c("center", "top")
   ) +
   
   ### Setting the view & zoom:
