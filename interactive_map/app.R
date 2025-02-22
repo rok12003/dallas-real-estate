@@ -40,6 +40,35 @@ dallas_zips <- as.character(unique(dallas_ts$RegionName))
 dallas_shape_files <- dallas_shape_files |> 
   filter(ZCTA5CE10 %in% unique(dallas_ts$RegionName))
 
+# Data Viz Time
+## Creating base tmap Dallas Map to work with:
+tmap_mode("view") +
+  tm_basemap("OpenStreetMap") +
+  tm_shape(dallas_shape_files) +
+  
+  ### Formatting & data stuff:
+  tm_polygons(
+    alpha = 0.5,
+    palette = "viridis",
+    border.col = "navy",
+    border.alpha = 0.5, 
+    id = "ZCTA5CE10",
+    popup.vars = c(
+      "Zip Code" = "ZCTA5CE10"
+    )
+  ) +
+  
+  ### Layout:
+  tm_layout(
+    title = "Single-Family Home Prices by Zip Code in the Dallas-Ft. Worth MSA",
+    title.position = c("center", "center")
+  ) +
+  
+  ### Setting the view & zoom:
+  tm_view(
+    set.view = c(-96.8, 32.8, 8),
+    set.zoom.limits = c(7, 13)
+  )
 
 
 
