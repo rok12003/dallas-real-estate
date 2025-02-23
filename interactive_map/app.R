@@ -17,41 +17,117 @@ library(sf)
 ## Loading in our beautiful dataset:
 load("data/processed_dfs/shiny_df.RData")
 
-# ui.R
-
-# server.R
-# Bringing it all together
-
-# Data Viz Time
-## Creating base tmap Dallas Map to work with:
-tmap_mode("view") +
-  tm_basemap("OpenStreetMap") +
-  tm_shape(shiny_df) +
+# UI Stuff!
+ui <- fluidPage(
+  titlePanel("Single-Family Home Prices by Zip Code in Dallas MSA Over Time"),
   
-  ### Formatting & data stuff:
-  tm_polygons(
-    col = "Price",
-    palette = "inferno",
-    alpha = 0.5,
-    border.col = "black",
-    border.alpha = 0.5,
-    title = "Housing Prices ($)",
-    style = "jenks",
-    n = 8,
-    popup.vars = c(
-      "Zip Code" = "ZCTA5CE10",
-      "Average Price" = "Price"
+  ## Customizing the slider:
+  sidebarLayout(
+    sidebarPanel(
+      
+      ### Slider that selects "Month-Year"
+      sliderInput("date_slider",
+                  "Select Month/Year:",
+                  min = min(shiny_df$Date),
+                  max = max(shiny_df$Date),
+                  value = min(shiny_df$Date),
+                  timeFormat = "%Y-%m",
+                  animate = animationOptions(interval = 1500)),
+      
+      ### Adding some informative text:
+      hr(),
+      textOutput("price_summary")
+    ),
+    
+    mainPanel(
+      
+      ### Displaying map output:
+      tmapOutput("price_map", height = "800px")
     )
-  ) +
-  
-  ### Layout:
-  tm_layout(
-    title = "Single-Family Home Prices by Zip Code in the Dallas-Ft. Worth MSA",
-    title.position = c("center", "top")
-  ) +
-  
-  ### Setting the view & zoom:
-  tm_view(
-    set.view = c(-96.8, 32.8, 8),
-    set.zoom.limits = c(7, 13)
   )
+)
+
+# Server stuff!
+server <- function(input, output, session) {
+  
+  ## Creating a function that gives us a date based on selection:
+  prices_for_date <- reactive({
+    
+    ### Getting selected date:
+    date_data <- shiny_df |>
+      filter(Date == input$date_slider)
+    
+    ### Returning filtered spatial data frame
+    return(date_data)
+  })
+  
+  ## Creating the map output:
+  output$price_map <- renderTmap({
+    
+    ### Fetching reactive data with the spatial information:
+    current_data <- prices_for_date()
+    
+    ### Data Viz:
+    tmap_mode("view") +
+      tm_basemap("OpenStreetMap") +
+      tm_shape(current_data) +
+      
+      ### Formatting & data stuff:
+      tm_polygons(
+        col = "Price",
+        palette = "inferno",
+        alpha = 0.5,
+        border.col = "black",
+        border.alpha = 0.5,
+        title = "Housing Prices ($)",
+        style = "jenks",
+        n = 8,
+        breaks = c(0, 300000, 400000, 500000, 600000, 
+                   750000, 1000000, 1500000, 2000000),
+        labels = c("Under $300k", 
+                   "$300k - $400k",
+                   "$400k - $500k", 
+                   "$500k - $600k",
+                   "$600k - $750k",
+                   "$750k - $1M",
+                   "$1M - $1.5M",
+                   "Over $1.5M"),
+        popup.vars = c(
+          "Zip Code" = "ZCTA5CE10",
+          "Average Price" = "Price"
+        )
+      ) +
+      
+      ### Layout:
+      tm_layout(
+        title = paste("Single-Family Home Prices -", 
+                      format(input$date_slider, "%B %Y")),
+        title.position = c("center", "top")
+      ) +
+      
+      ### Setting the view & zoom:
+      tm_view(
+        set.view = c(-96.8, 32.8, 8),
+        set.zoom.limits = c(7, 13)
+      )
+  })
+  
+  ## Creating a price summary output:
+  output$price_summary <- renderText({
+    current_data <- prices_for_date()
+    
+    ### Calculate summary statistics
+    mean_price <- mean(current_data$Price)
+    median_price <- median(current_data$Price)
+    
+    ### Information blurb:
+    paste0(
+      "Summary Statistics for ", format(input$date_slider, "%B %Y"), ":\n",
+      "Average Price: $", format(mean_price, big.mark = ",", scientific = FALSE), "\n",
+      "Median Price: $", format(median_price, big.mark = ",", scientific = FALSE)
+    )
+  })
+}
+
+# Bringing it all together
+shinyApp(ui = ui, server = server)
