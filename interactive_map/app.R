@@ -20,13 +20,17 @@ load("../data/processed_dfs/shiny_df.RData")
 
 # UI Stuff!
 ui <- fluidPage(
-  titlePanel("Single-Family Home Prices by Zip Code in Dallas MSA Over Time"),
+  titlePanel(
+    h1("Single-Family Home Prices by Zip Code in Dallas MSA Over Time"
+             , align = "center")),
   
   ## Creating a row with a slider on the left & a map on the right:
   fluidRow(
     column(
       width = 4,
       wellPanel(
+        
+        ### Slider input:
         sliderInput(
           "date_slider",
           "Select Month/Year:",
@@ -34,13 +38,19 @@ ui <- fluidPage(
           max = max(shiny_df$Date),
           value = min(shiny_df$Date),
           timeFormat = "%Y-%m",
-          animate = animationOptions(interval = 1500)
+          step = 31,
+          animate = animationOptions(interval = 2000, loop = TRUE)
         ),
+        
+        ### Horizontal line:
         hr(),
+        
+        ### Showing summary stats:
         textOutput("price_summary") 
       )
     ),
     
+    ## Displaying the changing-map:
     column(
       width = 8,
       tmapOutput("price_map", height = "800px")
@@ -50,7 +60,7 @@ ui <- fluidPage(
 
 # Server stuff!
 server <- function(input, output, session) {
-  
+
   ## Creating a function that gives us a date based on selection:
   prices_for_date <- reactive({
     
@@ -62,7 +72,7 @@ server <- function(input, output, session) {
     ### Returning filtered spatial data frame
     return(date_data)
   })
-  
+
   ## Creating the map output:
   output$price_map <- renderTmap({
     
@@ -109,18 +119,19 @@ server <- function(input, output, session) {
       
       ### Setting the view & zoom:
       tm_view(
-        set.view = c(-96.8, 32.8, 8),
+        set.view = c(-96.8, 32.8, 9),
         set.zoom.limits = c(7, 13)
       )
   })
   
   ## Creating a price summary output:
+  ## Creating a price summary output:
   output$price_summary <- renderText({
     current_data <- prices_for_date()
     
     ### Calculate summary statistics
-    mean_price <- mean(current_data$Price)
-    median_price <- median(current_data$Price)
+    mean_price <- round(mean(current_data$Price, na.rm = TRUE), 0)
+    median_price <- round(median(current_data$Price, na.rm = TRUE), 0)
     
     ### Information blurb:
     paste0(
@@ -131,5 +142,5 @@ server <- function(input, output, session) {
   })
 }
 
-# Bringing it all together
+# Bringing it all together!
 shinyApp(ui = ui, server = server)
