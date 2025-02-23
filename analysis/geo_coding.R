@@ -53,9 +53,5 @@ combined_ts <- bind_rows(dallas_ts_skinny, validation_df_skinny)
 shiny_df <- dallas_shape_files |>
   left_join(combined_ts, by = c("ZCTA5CE10" = "RegionName"))
 
-### Converting shiny_df to have month-year:
-shiny_df <- shiny_df |>
-  mutate(Date = yearmonth(shiny_df$Date))
-
 ## Save as an df for later use:
 save(shiny_df, file = "data/processed_dfs/shiny_df.RData")

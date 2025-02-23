@@ -4,6 +4,7 @@
 ## General imports:
 library(tidyverse)
 library(dplyr)
+library(lubridate)
 
 ## Shiny imports:
 library(shiny)
@@ -15,33 +16,33 @@ library(tmap)
 library(sf)
 
 ## Loading in our beautiful dataset:
-load("data/processed_dfs/shiny_df.RData")
+load("../data/processed_dfs/shiny_df.RData")
 
 # UI Stuff!
 ui <- fluidPage(
   titlePanel("Single-Family Home Prices by Zip Code in Dallas MSA Over Time"),
   
-  ## Customizing the slider:
-  sidebarLayout(
-    sidebarPanel(
-      
-      ### Slider that selects "Month-Year"
-      sliderInput("date_slider",
-                  "Select Month/Year:",
-                  min = min(shiny_df$Date),
-                  max = max(shiny_df$Date),
-                  value = min(shiny_df$Date),
-                  timeFormat = "%Y-%m",
-                  animate = animationOptions(interval = 1500)),
-      
-      ### Adding some informative text:
-      hr(),
-      textOutput("price_summary")
+  ## Creating a row with a slider on the left & a map on the right:
+  fluidRow(
+    column(
+      width = 4,
+      wellPanel(
+        sliderInput(
+          "date_slider",
+          "Select Month/Year:",
+          min = min(shiny_df$Date),
+          max = max(shiny_df$Date),
+          value = min(shiny_df$Date),
+          timeFormat = "%Y-%m",
+          animate = animationOptions(interval = 1500)
+        ),
+        hr(),
+        textOutput("price_summary") 
+      )
     ),
     
-    mainPanel(
-      
-      ### Displaying map output:
+    column(
+      width = 8,
       tmapOutput("price_map", height = "800px")
     )
   )
@@ -54,8 +55,9 @@ server <- function(input, output, session) {
   prices_for_date <- reactive({
     
     ### Getting selected date:
-    date_data <- shiny_df |>
-      filter(Date == input$date_slider)
+    date_data <- shiny_df |> 
+      filter(floor_date(Date, "month") == floor_date(input$date_slider, "month")) |> 
+      select(ZCTA5CE10, Price, geometry)
     
     ### Returning filtered spatial data frame
     return(date_data)
