@@ -9,10 +9,12 @@ library(lubridate)
 ## Shiny imports:
 library(shiny)
 library(bslib)
+library(quarto)
 
 ## Viz imports:
 library(ggplot2)
 library(tmap)
+library(terra)
 library(sf)
 
 ## Loading in our beautiful dataset:
