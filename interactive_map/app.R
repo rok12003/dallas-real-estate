@@ -16,7 +16,7 @@ library(tmap)
 library(sf)
 
 ## Loading in our beautiful dataset:
-load("../data/processed_dfs/shiny_df.RData")
+load("shiny_df.RData")
 
 # UI Stuff!
 ui <- fluidPage(
@@ -39,7 +39,7 @@ ui <- fluidPage(
           value = min(shiny_df$Date),
           timeFormat = "%Y-%m",
           step = 31,
-          animate = animationOptions(interval = 2000, loop = TRUE)
+          animate = animationOptions(interval = 3000, loop = TRUE)
         ),
         
         ### Horizontal line:
@@ -119,8 +119,8 @@ server <- function(input, output, session) {
       
       ### Setting the view & zoom:
       tm_view(
-        set.view = c(-96.8, 32.8, 9),
-        set.zoom.limits = c(7, 13)
+        set_view = c(-96.8, 32.8, 9),
+        set_zoom_limits = c(7, 13)
       )
   })
   
