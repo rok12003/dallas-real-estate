@@ -70,7 +70,18 @@ server <- function(input, output, session) {
     
     ### Getting selected date:
     date_data <- shiny_df |> 
-      filter(floor_date(Date, "month") == floor_date(input$date_slider, "month")) |> 
+      filter(floor_date(Date, "month") == floor_date(input$date_slider, "month"))
+    
+    ### Adding conditional if user picks beyond Nov. 2024:
+    if (input$date_slider > as.Date("2024-11-30")) {
+      
+      #### Assigning predicted price col as Price:
+      date_data <- date_data |>
+        mutate(Price = .mean)
+    }
+    
+    ### Select needed columns
+    date_data <- date_data |>
       select(ZCTA5CE10, Price, geometry)
     
     ### Returning filtered spatial data frame
@@ -115,8 +126,11 @@ server <- function(input, output, session) {
       
       ### Layout:
       tm_layout(
-        title = paste("Single-Family Home Prices -", 
-                      format(input$date_slider, "%B %Y")),
+        title = paste0(
+          "Single-Family Home Prices - ", 
+          format(input$date_slider, "%B %Y"),
+          if(input$date_slider > as.Date("2024-11-30")) " (Predicted)" else ""
+        ),
         title.position = c("center", "top")
       ) +
       
@@ -128,7 +142,6 @@ server <- function(input, output, session) {
   })
   
   ## Creating a price summary output:
-  ## Creating a price summary output:
   output$price_summary <- renderText({
     current_data <- prices_for_date()
     
@@ -139,6 +152,7 @@ server <- function(input, output, session) {
     ### Information blurb:
     paste0(
       "Summary Statistics for ", format(input$date_slider, "%B %Y"), ":\n",
+      if(input$date_slider > as.Date("2024-11-30")) " (Predicted)" else "", ":\n",
       "Average Price: $", format(mean_price, big.mark = ",", scientific = FALSE), "\n",
       "Median Price: $", format(median_price, big.mark = ",", scientific = FALSE)
     )
