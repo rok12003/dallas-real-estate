@@ -7,9 +7,14 @@ library(dplyr)
 library(tsibble)
 library(lubridate)
 
+## Gotta go fast:
+library(data.table)
+library(arrow)
+
 ## Spatial imports:
 library(tidycensus)
 library(tigris)
+library(sf)
 
 # Data Pulling & Wrangling:
 ## Loading in dataframes from ts analysis:
@@ -57,5 +62,18 @@ shiny_df <- dallas_shape_files |>
 shiny_df <- shiny_df |>
   select(ZCTA5CE10, Date, Price, .mean, geometry)
 
-## Save as an df for later use:
-save(shiny_df, file = "interactive_map/shiny_df.RData", compress = "xz")
+### We gotta optimize so we don't crash the cloud:
+#### Rounding numeric cols:
+shiny_df <- shiny_df |>
+  mutate(across(where(is.numeric), ~round(., 0)))
+
+#### Converting zip codes to a factor to save memory:
+shiny_df <- shiny_df |>
+  mutate(ZCTA5CE10 = as.factor(ZCTA5CE10))
+
+### Simplifying geometries:
+shiny_df <- shiny_df %>%
+  st_simplify(dTolerance = 50)
+
+### Saving as an RDS file:
+saveRDS(shiny_df, "interactive_map/shiny_df.rds", compress = "xz")

@@ -5,6 +5,7 @@
 library(tidyverse)
 library(dplyr)
 library(lubridate)
+library(pryr)
 
 ## Shiny imports:
 library(shiny)
@@ -16,7 +17,10 @@ library(tmap)
 library(sf)
 
 ## Loading in our beautiful dataset:
-load("shiny_df.RData")
+shiny_df <- readRDS("shiny_df.rds")
+
+## Initilaizing map as program is moving too quickly!
+tmap_mode("view")
 
 # UI Stuff!
 ui <- fluidPage(
@@ -80,9 +84,8 @@ server <- function(input, output, session) {
     current_data <- prices_for_date()
     
     ### Data Viz:
-    tmap_mode("view") +
-      tm_basemap("OpenStreetMap") +
-      tm_shape(current_data) +
+    tm_basemap("OpenStreetMap") +
+    tm_shape(current_data) +
       
       ### Formatting & data stuff:
       tm_polygons(
@@ -119,7 +122,7 @@ server <- function(input, output, session) {
       
       ### Setting the view & zoom:
       tm_view(
-        set_view = c(-96.8, 32.8, 9),
+        set_view = c(-96.8, 32.8, 8.5),
         set_zoom_limits = c(7, 13)
       )
   })
