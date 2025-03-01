@@ -72,14 +72,6 @@ server <- function(input, output, session) {
     date_data <- shiny_df |> 
       filter(floor_date(Date, "month") == floor_date(input$date_slider, "month"))
     
-    ### Adding conditional if user picks beyond Nov. 2024:
-    if (input$date_slider > as.Date("2024-11-30")) {
-      
-      #### Assigning predicted price col as Price:
-      date_data <- date_data |>
-        mutate(Price = .mean)
-    }
-    
     ### Select needed columns
     date_data <- date_data |>
       select(ZCTA5CE10, Price, geometry)
