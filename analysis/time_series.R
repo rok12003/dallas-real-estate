@@ -87,5 +87,8 @@ dallas_tibble <- dallas_ts |>
 ## Joining the forecast to the existing dataframe:
 dallas_with_forecast <- bind_rows(dallas_tibble, dallas_forecast_simple)
 
-# Saving objects for geographical matching file:
+# Saving objects:
 saveRDS(dallas_with_forecast, "data/processed_dfs/dallas_with_forecast.rds")
+saveRDS(dallas_forecast_simple, "data/processed_dfs/dallas_forecast_simple.rds")
+saveRDS(dallas_housing_long, "data/processed_dfs/dallas_housing_long.rds")
+
