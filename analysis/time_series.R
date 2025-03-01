@@ -11,7 +11,7 @@ library(tsibble)
 library(lubridate)
 library(fable)
 library(zoo)
-library(urca)
+library(feasts)
 
 ## Importing dataset:
 ## USA Housing Data from Zillow:
@@ -59,6 +59,10 @@ dallas_ts <- dallas_ts |>
   mutate(Price = na.approx(Price, na.rm = FALSE)) |>
   ungroup()
 
+## Thinning out dallas_ts for the vars we need:
+dallas_ts <- dallas_ts |>
+  select(RegionName, Date, Price)
+
 # ARIMA modeling:
 ## Fitting a simple ARIMA model onto the ts object:
 arima_model <- dallas_ts |>
@@ -67,35 +71,21 @@ arima_model <- dallas_ts |>
 ## Forecast the next 12 months:
 dallas_forecast_simple <- arima_model |> 
   forecast(h = "12 months")
-
-## Seeing if Dec 2024/Jan 2025 (predicted) actually hold up to Dec 2024/Jan 2025 (actual)
-### Initializing the validation df:
-validation_df <- dallas_forecast_simple |> 
-  as.data.frame() |>
-  filter(Date <= yearmonth("2025-01")) |> 
-  select(-.model, -Price)
-
-### Reading in just the columns w/ Dec 2024 & Jan 2025 data:
-actual_vals <- dallas_housing_long |>
-  filter(Date > '2024-11-30') |>
-  select(RegionName, Date, Price) |>
   
-  #### Converting the date to year-month format:
-  mutate(Date = yearmonth(Date))
+## Pruning the dallas_forecast object:
+dallas_forecast_simple <- dallas_forecast_simple |>
+  as_tibble() |>
+  select(-.model, -Price) |>
+  
+  ### I'm renaming here b/c it'll help with the join:
+  rename(Price = .mean) 
 
-### Joining validation_df to actual_vals:
-validation_df <- inner_join(validation_df, actual_vals, by = c(
-  "RegionName", "Date"))
+## Converting dallas_ts to tibble:
+dallas_tibble <- dallas_ts |>
+  as_tibble()
+  
+## Joining the forecast to the existing dataframe:
+dallas_with_forecast <- bind_rows(dallas_tibble, dallas_forecast_simple)
 
-### Creating a column that calculates the difference between predicted & actual:
-validation_df <- validation_df |> 
-  mutate(diff = .mean - Price) |> 
-  arrange(desc(diff)) 
-
-### HOLY SHIT--only an average of $363 difference between ARIMA & actual price
-### Linear model kinda goated ngl. 
-
-# Saving objects for Shiny App:
-save(validation_df, file = "data/processed_dfs/validation_data.RData")
-saveRDS(dallas_ts, "data/processed_dfs/dallas_ts.rds")
-
+# Saving objects for geographical matching file:
+saveRDS(dallas_with_forecast, "data/processed_dfs/dallas_with_forecast.rds")
