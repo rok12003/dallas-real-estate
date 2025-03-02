@@ -6,6 +6,7 @@ library(tidyverse)
 library(dplyr)
 library(lubridate)
 library(pryr)
+library(scales)
 
 ## Shiny imports:
 library(shiny)
@@ -18,6 +19,14 @@ library(sf)
 
 ## Loading in our beautiful dataset:
 shiny_df <- readRDS("shiny_df.rds")
+regional_avg <- readRDS("regional_avg.rds")
+
+### This is for the time series tab as shing_df is an sf_object:
+shiny_df_normal <- st_drop_geometry(shiny_df) |>
+  mutate(ZCTA5CE10 = as.character(ZCTA5CE10))
+
+## Valid zips:
+valid_zips <- unique(shiny_df_normal$ZCTA5CE10)
 
 ## Initilaizing map as program is moving too quickly!
 tmap_mode("view")
@@ -25,39 +34,76 @@ tmap_mode("view")
 # UI Stuff!
 ui <- fluidPage(
   titlePanel(
-    h1("Single-Family Home Prices by Zip Code in Dallas MSA Over Time"
-             , align = "center")),
+    h2(
+      "Single-Family Home Prices by Zip Code in Dallas MSA Over Time",
+      align = "center"
+    )
+  ),
   
-  ## Creating a row with a slider on the left & a map on the right:
-  fluidRow(
-    column(
-      width = 4,
-      wellPanel(
-        
-        ### Slider input:
-        sliderInput(
-          "date_slider",
-          "Select Month/Year:",
-          min = min(shiny_df$Date),
-          max = max(shiny_df$Date),
-          value = min(shiny_df$Date),
-          timeFormat = "%Y-%m",
-          step = 31,
-          animate = animationOptions(interval = 3000, loop = TRUE)
+  ## Initializing a panel:
+  tabsetPanel(
+    
+    ### First Tab - Map!
+    tabPanel(
+      "Geographic View",
+      fluidRow(
+        column(
+          width = 5,
+          wellPanel(
+            
+            #### Slider input:
+            sliderInput(
+              "date_slider",
+              "Select Month/Year:",
+              min = min(shiny_df$Date),
+              max = max(shiny_df$Date),
+              value = min(shiny_df$Date),
+              timeFormat = "%Y-%m",
+              step = 31,
+              animate = animationOptions(interval = 2000, loop = TRUE)
+            ),
+            
+            #### Horizontal line:
+            hr(),
+            
+            #### Showing summary stats:
+            textOutput("price_summary")
+          )
         ),
         
-        ### Horizontal line:
-        hr(),
-        
-        ### Showing summary stats:
-        textOutput("price_summary") 
+        #### Displaying the changing-map:
+        column(
+          width = 7,
+          tmapOutput("price_map", height = "600px")
+        )
       )
     ),
     
-    ## Displaying the changing-map:
-    column(
-      width = 8,
-      tmapOutput("price_map", height = "800px")
+    ### Second Tab - Time Series
+    tabPanel(
+      "Prices over Time by Zip",
+      
+      #### Formatting the row:
+      fluidRow(
+        column(
+          width = 3,
+          wellPanel(
+            textInput("zip_input", "Enter a Zip Code:", placeholder = "e.g., 75001"),
+            actionButton("submit_zip", "View Trends", class = "btn-primary"),
+            htmlOutput("zip_validation"),
+            br(),
+            checkboxInput("show_regional", "Show Dallas MSA Average", value = TRUE),
+            br(),
+            htmlOutput("zip_info")
+          )
+        ),
+        
+        #### Formatting the column:
+        column(
+          width = 9,
+          plotOutput("time_series_plot", height = "500px", width = "100%")
+        )
+      )
     )
   )
 )
@@ -129,7 +175,7 @@ server <- function(input, output, session) {
       
       ### Setting the view & zoom:
       tm_view(
-        set_view = c(-96.8, 32.8, 8.5),
+        set_view = c(-96.8, 32.8, 8),
         set_zoom_limits = c(7, 13)
       )
   })
@@ -148,6 +194,115 @@ server <- function(input, output, session) {
       if(input$date_slider > as.Date("2024-11-30")) " (Predicted)" else "", ":\n",
       "Average Price: $", format(mean_price, big.mark = ",", scientific = FALSE), "\n",
       "Median Price: $", format(median_price, big.mark = ",", scientific = FALSE)
+    )
+  })
+  
+  ## Server code for zip selection:
+  selected_zip <- reactiveVal("")
+  
+  ## Handling zip code submission:
+  observeEvent(input$submit_zip, {
+    entered_zip <- trimws(input$zip_input)
+    if(entered_zip %in% valid_zips) {
+      selected_zip(entered_zip)
+    }
+  })
+  
+  ## Zip code validation:
+  output$zip_validation <- renderUI({
+    if(input$submit_zip == 0) return(NULL)
+    
+    ### Checking if zip code is valid:
+    entered_zip <- trimws(input$zip_input)
+    if(entered_zip %in% valid_zips) {
+      tags$span(icon("check-circle"), "Valid zip code", style = "color: green")
+    } else {
+      tags$span(icon("exclamation-triangle"), "Please enter a valid Dallas MSA zip code", style = "color: red")
+    }
+  })
+  
+  ## Time Series Plotting:
+  output$time_series_plot <- renderPlot({
+    zip <- selected_zip()
+    if(zip == "") {
+      return(ggplot() + 
+               annotate("text", x = 0.5, y = 0.5, 
+                        label = "Enter a valid zip code and click 'View Trends'",
+                        size = 5) +
+               theme_void())
+    }
+    
+    ## Initializing the plot:
+    p <- ggplot() +
+      geom_line(
+        data = shiny_df_normal |> filter(ZCTA5CE10 == zip),
+        aes(x = Date, y = Price, color = "Selected Zip Code"),
+        size = 1
+      )    
+    
+    ## Adding regional average comparision:
+    if(input$show_regional) {
+      p <- p + 
+        geom_line(
+          data = regional_avg,
+          aes(x = Date, y = Price, color = "Dallas MSA Average"),
+          size = 1,
+          linetype = "dashed"
+        )
+    }
+    
+    ## Setting colors for the zip & MSA avg:
+    p <- p +
+      scale_color_manual(
+        name = "",
+        values = c("Selected Zip Code" = "blue", "Dallas MSA Average" = "red")
+      )
+    
+    ## Formatting plot:
+    p +
+      labs(title = paste("Price Trend for Zip Code", zip),
+           x = "Date", y = "Home Price ($)") +
+      scale_y_continuous(labels = dollar_format()) +
+      theme_minimal(base_size = 14) +
+      theme(
+        plot.title = element_text(size = 18, face = "bold"),
+        legend.position = "bottom",
+        panel.grid.major = element_line(color = "grey90"),
+        panel.background = element_rect(fill = "white", color = NA),
+        legend.box.background = element_rect(color = "grey80"),
+        legend.margin = margin(10, 10, 10, 10),
+        legend.key = element_rect(fill = "white")
+      )
+  })
+  
+  ## Time Series summary info:
+  output$zip_info <- renderUI({
+    zip <- selected_zip()
+    if(zip == "") return(NULL)
+    
+    ### Some callout information:
+    zip_data <- shiny_df_normal |>
+      filter(ZCTA5CE10 == zip)
+    
+    latest <- zip_data |>
+      arrange(desc(Date)) |>
+      slice(1) |>
+      pull(Price)
+    
+    first <- zip_data |>
+      arrange(Date) |>
+      slice(1) |>
+      pull(Price)
+    
+    growth <- (latest / first - 1) * 100
+    
+    ### Formatting for callouts:
+    tags$div(
+      style = "margin-top: 15px; padding: 10px; background-color: #f8f9fa; border-radius: 5px;",
+      tags$h4(paste("Zip Code", zip, "Overview")),
+      tags$p(paste0("Current Price: $", format(round(latest), big.mark = ","))),
+      tags$p(paste0("Starting Price: $", format(round(first), big.mark = ","))),
+      tags$p(paste0("Total Growth: ", round(growth, 1), "%"))
     )
   })
 }

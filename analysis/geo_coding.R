@@ -52,13 +52,15 @@ shiny_df <- shiny_df |>
   mutate(Price = round(Price, 0))
 
 ### We gotta optimize so we don't crash the cloud:
-#### Converting zip codes to a factor to save memory:
-shiny_df <- shiny_df |>
-  mutate(ZCTA5CE10 = as.factor(ZCTA5CE10))
-
 ### Simplifying geometries:
 shiny_df <- shiny_df |>
   st_simplify(dTolerance = 50)
 
+### Creating Regional Average df:
+regional_avg <- shiny_df |>
+  group_by(Date) |>
+  summarise(Price = mean(Price), .groups = "drop")
+
 ### Saving as an RDS file:
 saveRDS(shiny_df, "interactive_map/shiny_df.rds", compress = "xz")
+saveRDS(regional_avg, "interactive_map/regional_avg.rds", compress = "xz")
