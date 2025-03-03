@@ -5,6 +5,8 @@ account: rohitkandala
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 14075686
-bundleId: 9873905
+bundleId: 9879987
 url: https://rohitkandala.shinyapps.io/interactive_map/
 version: 1
+asMultiple: FALSE
+asStatic: FALSE

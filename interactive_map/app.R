@@ -217,7 +217,9 @@ server <- function(input, output, session) {
     if(entered_zip %in% valid_zips) {
       tags$span(icon("check-circle"), "Valid zip code", style = "color: green")
     } else {
-      tags$span(icon("exclamation-triangle"), "Please enter a valid Dallas MSA zip code", style = "color: red")
+      tags$span(icon("exclamation-triangle")
+                , "Please enter a valid Dallas MSA zip code"
+                , style = "color: red")
     }
   })
   
@@ -264,11 +266,21 @@ server <- function(input, output, session) {
            x = "Date", y = "Home Price ($)") +
       scale_y_continuous(labels = dollar_format()) +
       theme_minimal(base_size = 14) +
-      theme(
-        plot.title = element_text(size = 18, face = "bold"),
+      geom_vline(xintercept = as.Date("2024-11-30")
+                 , linetype = "dotted") +  
+      annotate("text"
+               , x = as.Date("2024-11-30")
+               , y = 300000,  
+               label = "Actual Data Ends"
+               , vjust = -0.5
+               , hjust = 1) +
+    theme(
+        plot.title = element_text(size = 18
+                                  , face = "bold"),
         legend.position = "bottom",
         panel.grid.major = element_line(color = "grey90"),
-        panel.background = element_rect(fill = "white", color = NA),
+        panel.background = element_rect(fill = "white"
+                                        , color = NA),
         legend.box.background = element_rect(color = "grey80"),
         legend.margin = margin(10, 10, 10, 10),
         legend.key = element_rect(fill = "white")
@@ -284,9 +296,9 @@ server <- function(input, output, session) {
     zip_data <- shiny_df_normal |>
       filter(ZCTA5CE10 == zip)
     
+    ### Hard-coding date because Zillow has a goofy csv and not an API!
     latest <- zip_data |>
-      arrange(desc(Date)) |>
-      slice(1) |>
+      filter(Date == "2024-11-01") |>
       pull(Price)
     
     first <- zip_data |>
