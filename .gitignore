@@ -3,12 +3,7 @@
 *.RData
 *.Ruserdata
 *.csv
-*.cpg
-*.dbf
-*.prj
-*.sjp
-*.xml
-*.shx
 *.png
 data/
-.Rproj.user
+*.Rapp.history
+*.rds
