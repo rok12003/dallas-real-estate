@@ -32,12 +32,11 @@ tmap_mode("view")
 
 # UI Stuff!
 ui <- fluidPage(
-  titlePanel(
+  titlePanel("Dallas Real Estate Market Tool"),
     h2(
       "Single-Family Home Prices by Zip Code in Dallas MSA Over Time",
       align = "center"
-    )
-  ),
+    ),
   
   ## Initializing a panel:
   tabsetPanel(

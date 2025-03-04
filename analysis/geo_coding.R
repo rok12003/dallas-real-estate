@@ -59,7 +59,7 @@ shiny_df <- shiny_df |>
 ### Creating Regional Average df:
 regional_avg <- shiny_df |>
   group_by(Date) |>
-  summarise(Price = mean(Price), .groups = "drop")
+  summarise(Price = mean(Price, na.rm = TRUE), .groups = "drop")
 
 ### Saving as an RDS file:
 saveRDS(shiny_df, "interactive_map/shiny_df.rds", compress = "xz")
