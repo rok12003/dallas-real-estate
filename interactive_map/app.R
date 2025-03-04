@@ -5,7 +5,6 @@
 library(tidyverse)
 library(dplyr)
 library(lubridate)
-library(pryr)
 library(scales)
 
 ## Shiny imports:
