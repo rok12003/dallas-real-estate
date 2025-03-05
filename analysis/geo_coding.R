@@ -61,6 +61,10 @@ regional_avg <- shiny_df |>
   group_by(Date) |>
   summarise(Price = mean(Price, na.rm = TRUE), .groups = "drop")
 
+### Rounding price in regional df:
+regional_avg <- regional_avg |>
+  mutate(Price = round(Price, 0))
+
 ### Saving as an RDS file:
 saveRDS(shiny_df, "interactive_map/shiny_df.rds", compress = "xz")
 saveRDS(regional_avg, "interactive_map/regional_avg.rds", compress = "xz")

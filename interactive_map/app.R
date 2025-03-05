@@ -15,6 +15,7 @@ library(bslib)
 library(ggplot2)
 library(tmap)
 library(sf)
+library(plotly)
 
 ## Loading in our beautiful dataset:
 shiny_df <- readRDS("shiny_df.rds")
@@ -99,7 +100,8 @@ ui <- fluidPage(
         #### Formatting the column:
         column(
           width = 9,
-          plotOutput("time_series_plot", height = "500px", width = "100%")
+          plotlyOutput("time_series_plot", height = "500px", width = "100%"),
+          uiOutput("info_blurb")
         )
       )
     )
@@ -222,7 +224,7 @@ server <- function(input, output, session) {
   })
   
   ## Time Series Plotting:
-  output$time_series_plot <- renderPlot({
+  output$time_series_plot <- renderPlotly({
     zip <- selected_zip()
     if(zip == "") {
       return(ggplot() + 
@@ -232,58 +234,78 @@ server <- function(input, output, session) {
                theme_void())
     }
     
-    ## Initializing the plot:
-    p <- ggplot() +
-      geom_line(
-        data = shiny_df_normal |> filter(ZCTA5CE10 == zip),
-        aes(x = Date, y = Price, color = "Selected Zip Code"),
-        size = 1
-      )    
+    ## Initializing plotly object:
+    p <- plot_ly()
     
-    ## Adding regional average comparision:
+    ## Adding zip code plot:
+    p <- add_trace(p,
+                   data = shiny_df_normal |> filter(ZCTA5CE10 == zip),
+                   x = ~Date,
+                   y = ~Price,
+                   type = 'scatter',
+                   mode = 'lines',
+                   name = paste("Zip Code", zip),
+                   line = list(color = 'blue'))
+    
+    ## Adding regional average comparison:
     if(input$show_regional) {
-      p <- p + 
-        geom_line(
-          data = regional_avg,
-          aes(x = Date, y = Price, color = "Dallas MSA Average"),
-          size = 1,
-          linetype = "dashed"
-        )
+      p <- add_trace(p,
+                     data = regional_avg,
+                     x = ~Date,
+                     y = ~Price,
+                     type = 'scatter',
+                     mode = 'lines',
+                     name = "MSA Avg",
+                     line = list(color = 'red', dash = 'dot'))
+    }
+
+    ## Adding a vline function because plotly is goofy:
+    vline <- function(x = 0, color = "grey") {
+      list(
+        type = "line", 
+        y0 = 0, 
+        y1 = 1, 
+        yref = "paper",
+        x0 = x, 
+        x1 = x, 
+        line = list(color = color, dash = "dash")
+      )
     }
     
-    ## Setting colors for the zip & MSA avg:
-    p <- p +
-      scale_color_manual(
-        name = "",
-        values = c("Selected Zip Code" = "blue", "Dallas MSA Average" = "red")
-      )
+    ## Adding a vertical line in Nov. 2024:
+    p <- layout(p, 
+                shapes = list(vline(as.Date("2024-11-30"))),
+                annotations = list(
+                  list(
+                    x = as.Date("2024-10-31"),
+                    y = 0.25,
+                    yref = "paper",
+                    text = "Actual Data Ends"
+                  )
+                ))
     
-    ## Formatting plot:
-    p +
-      labs(title = paste("Price Trend for Zip Code", zip),
-           x = "Date", y = "Home Price ($)") +
-      scale_y_continuous(labels = dollar_format()) +
-      theme_minimal(base_size = 14) +
-      geom_vline(xintercept = as.Date("2024-11-30")
-                 , linetype = "dotted") +  
-      annotate("text"
-               , x = as.Date("2024-11-30")
-               , y = 300000,  
-               label = "Actual Data Ends"
-               , vjust = -0.5
-               , hjust = 1) +
-    theme(
-        plot.title = element_text(size = 18
-                                  , face = "bold"),
-        legend.position = "bottom",
-        panel.grid.major = element_line(color = "grey90"),
-        panel.background = element_rect(fill = "white"
-                                        , color = NA),
-        legend.box.background = element_rect(color = "grey80"),
-        legend.margin = margin(10, 10, 10, 10),
-        legend.key = element_rect(fill = "white")
-      )
-  })
+    ## Adding information blurb as well as hover details:
+    p <- layout(p,
+                title = paste("Price Trend for Zip Code", zip),
+                xaxis = list(title = "Date"),
+                yaxis = list(title = "Home Price ($)",
+                             tickformat = "$,"),
+                hoverlabel = list(
+                  bgcolor = "white",
+                  font = list(
+                    size = 14,
+                    color = "black"
+                  ),
+                  bordercolor = "gray",
+                  width = 400,
+                  height = 200
+                ),
+                hovermode = 'x unified',
+                hoverdistance = 100)
+    
+    # Return plot:
+    p <- config(p, displayModeBar = FALSE)
+})
   
   ## Time Series summary info:
   output$zip_info <- renderUI({
