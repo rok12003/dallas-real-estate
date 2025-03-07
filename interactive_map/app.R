@@ -66,7 +66,7 @@ ui <- fluidPage(
             hr(),
             
             #### Showing summary stats:
-            textOutput("price_summary")
+            uiOutput("price_summary")
           )
         ),
         
@@ -181,7 +181,7 @@ server <- function(input, output, session) {
   })
   
   ## Creating a price summary output:
-  output$price_summary <- renderText({
+  output$price_summary <- renderUI({
     current_data <- prices_for_date()
     
     ### Calculate summary statistics
@@ -189,12 +189,12 @@ server <- function(input, output, session) {
     median_price <- round(median(current_data$Price, na.rm = TRUE), 0)
     
     ### Information blurb:
-    paste0(
-      "Summary Statistics for ", format(input$date_slider, "%B %Y"), ":\n",
-      if(input$date_slider > as.Date("2024-11-30")) " (Predicted)" else "", ":\n",
-      "Average Price: $", format(mean_price, big.mark = ",", scientific = FALSE), "\n",
+    HTML(paste0(
+      "Summary Statistics for ", format(input$date_slider, "%B %Y"), "<br>",
+      if (input$date_slider > as.Date("2024-11-30")) " (Predicted)" else "", "<br><br>",
+      "Average Price: $", format(mean_price, big.mark = ",", scientific = FALSE), "<br>",
       "Median Price: $", format(median_price, big.mark = ",", scientific = FALSE)
-    )
+    ))
   })
   
   ## Server code for zip selection:
@@ -286,7 +286,14 @@ server <- function(input, output, session) {
     
     ## Adding information blurb as well as hover details:
     p <- layout(p,
-                title = paste("Price Trend for Zip Code", zip),
+                title = list(
+                  text = paste("Price Trend for Zip Code", zip),
+                  x = 0.5,
+                  y = 0.95,
+                  xanchor = "center",
+                  yanchor = "top",
+                  font = list(size = 18)
+                ),
                 xaxis = list(title = "Date"),
                 yaxis = list(title = "Home Price ($)",
                              tickformat = "$,"),
