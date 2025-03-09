@@ -9,3 +9,4 @@ data/
 *.Rapp.history
 *.rds
 .Rproj.user
+pngs/
