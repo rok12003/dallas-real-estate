@@ -141,9 +141,3 @@ big_movers(shiny_df_northern, growth = TRUE, 10, "Change_2022_to_2024")
 ### Northern Suburbs MSA YOY Top 10 High Growth Zips:
 big_movers(shiny_df_northern, growth = FALSE, 10, "Change_2020_to_2024")
 big_movers(shiny_df_northern, growth = FALSE, 10, "Change_2022_to_2024")
-
-# Real estate bust of 2022:
-## 
-
-
-
