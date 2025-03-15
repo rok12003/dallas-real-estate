@@ -27,6 +27,7 @@ dallas-real-estate (the repo)
 │   ├── activate.R
 │   └── settings.json
 ├── .gitignore
+├── pngs
 ├── LICENSE
 ├── README.md (This file!)
 ├── dallas-r-project.Rproj
