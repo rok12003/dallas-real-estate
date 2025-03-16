@@ -54,7 +54,7 @@ shiny_df <- shiny_df |>
 ### We gotta optimize so we don't crash the cloud:
 ### Simplifying geometries:
 shiny_df <- shiny_df |>
-  st_simplify(dTolerance = 50)
+  st_simplify(dTolerance = 250, preserveTopology = TRUE)
 
 ### Creating Regional Average df:
 regional_avg <- shiny_df |>
@@ -64,6 +64,17 @@ regional_avg <- shiny_df |>
 ### Rounding price in regional df:
 regional_avg <- regional_avg |>
   mutate(Price = round(Price, 0))
+
+### Simply regional geometry:
+regional_avg <- regional_avg |>
+  st_simplify(dTolerance = 250, preserveTopology = TRUE)
+
+### Reduce coordiante precision in both df(s):
+shiny_df <- st_set_precision(shiny_df, 1e5) |> 
+  st_make_valid()
+
+regional_avg <- st_set_precision(regional_avg, 1e5) |> 
+  st_make_valid()
 
 ### Saving as an RDS file:
 saveRDS(shiny_df, "interactive_map/shiny_df.rds", compress = "xz")
